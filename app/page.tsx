@@ -31,27 +31,22 @@ function BadMathForm({ number }: { number: number }) {
 
   useEffect(() => {
     async function fetchCalculation() {
-      try {
-        Sentry.startSpan({ name: 'fetchCalculation' }, async (span) => {
-          span.setAttribute('number', number);
-          const res = await fetch('/api/submit', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ value: number }),
-          });
-          const data = await res.json();
-          if (!res.ok) {
-            throw new Error(data.error || 'Error fetching calculation');
-          }
-          setResult(data.result);
-          span.end();
+      await Sentry.startSpan({ name: 'fetchCalculation' }, async (span) => {
+        span.setAttribute('number', number);
+        const res = await fetch('/api/submit', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ value: number }),
         });
-      } catch (err: any) {
-        Sentry.captureException(err);
-        setError(err);
-      }
+        const data = await res.json();
+        if (!res.ok) {
+          throw new Error(data.error || 'Error fetching calculation');
+        }
+        setResult(data.result);
+        span.end();
+      });
     }
-    fetchCalculation();
+    fetchCalculation().catch((err) => setError(err));
   }, [number]);
 
   if (error) throw error;
